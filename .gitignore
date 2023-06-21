@@ -1,0 +1,16 @@
+node_modules
+dist
+
+
+tmp
+
+tsconfig.tsbuildinfo
+
+
+.DS_Store
+.turbo
+.swc
+
+.vscode
+.idea
+.pnpm-*.log
