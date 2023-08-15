@@ -2,7 +2,7 @@ import { isFunction, isNumber, isString, isSymbol } from './validate';
 
 export type PropertyPath = PropertyKey | PropertyKey[];
 
-export interface PathOptions {
+export interface ToPathOptions {
   separator?: string;
   preserve?: boolean;
   split?: (path: PropertyPath) => PropertyKey[];
@@ -12,7 +12,7 @@ const DEFAULT_SEPARATOR = '.';
 
 const ESCAPE_REG = /\\(\\)?/g;
 
-export const toPath = (path: PropertyPath, options?: PathOptions) => {
+export const toPath = (path: PropertyPath, options?: ToPathOptions) => {
   if (isFunction(options?.split)) return options!.split(path);
   if (isNumber(path) || isSymbol(path)) return [path];
   if (Array.isArray(path)) return path;

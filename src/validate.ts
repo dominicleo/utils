@@ -1,9 +1,5 @@
 import { instanceOf } from './instanceof';
 
-export const toString = (value: unknown) =>
-  Object.prototype.toString.call(value);
-
-const has = Object.prototype.hasOwnProperty;
 const isType =
   <T>(type: string | string[]) =>
   (value: unknown): value is T =>
@@ -11,6 +7,11 @@ const isType =
     (Array.isArray(type) ? type : [type]).some(
       (string) => toString(value) === `[object ${string}]`,
     );
+
+export const toString = (value: unknown) =>
+  Object.prototype.toString.call(value);
+
+export const hasOwn = Object.prototype.hasOwnProperty;
 
 export const isFunction = isType<(...args: any[]) => any>([
   'Function',
@@ -28,17 +29,21 @@ export const isString = isType<string>('String');
 export const isNumber = isType<number>('Number');
 export const isBoolean = isType<boolean>('Boolean');
 export const isPlainObject = isType<Record<PropertyKey, any>>('Object');
-export const isObject = (value: unknown) =>
+export const isObject = (value: unknown): value is object =>
   value !== null && typeof value === 'object';
 export const isRegExp = isType<RegExp>('RegExp');
 export const isSymbol = (value: unknown): value is symbol =>
   typeof value === 'symbol';
 export const isNull = (value: unknown) => value == null;
 export const isUndefined = (value: unknown) => value === undefined;
-export const isValid = (value: unknown) =>
+export const isValid = <T = unknown>(value: T): value is NonNullable<T> =>
   value !== null && value !== undefined;
 export const isValidNumber = (value: any): value is number =>
   !Number.isNaN(value) && isNumber(value);
+
+export const isNumberLike = (value: any): value is number => {
+  return isNumber(value) || /^(\d+)(\.\d+)?$/.test(value);
+};
 
 export const isEmpty = (value: any, strict = false) => {
   if (isNull(value)) return true;
@@ -55,7 +60,7 @@ export const isEmpty = (value: any, strict = false) => {
 
   if (isEmptyArray(value, strict)) return true;
 
-  if (instanceOf(value, 'Error')) return value.message === '';
+  if (instanceOf(value, Error)) return value.message === '';
 
   if (value.toString === toString) {
     switch (value.toString()) {
@@ -70,11 +75,11 @@ export const isEmpty = (value: any, strict = false) => {
   return false;
 };
 
-export const isEmptyObject = <T extends object>(value: T) => {
+export const isEmptyObject = (value: unknown) => {
   if (!isObject(value)) return false;
 
   for (const key in value) {
-    if (has.call(value, key)) {
+    if (hasOwn.call(value, key)) {
       return false;
     }
   }
@@ -82,7 +87,7 @@ export const isEmptyObject = <T extends object>(value: T) => {
   return true;
 };
 
-export const isEmptyArray = <T extends any[]>(value: T, strict = false) => {
+export const isEmptyArray = (value: unknown, strict = false) => {
   if (!Array.isArray(value)) return false;
 
   if (value.length === 0) {
