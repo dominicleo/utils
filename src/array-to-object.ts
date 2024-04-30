@@ -1,7 +1,7 @@
 import { toArray } from './to-array';
 import { isFunction, isPlainObject, isValid } from './validate';
 
-const arrayToObject = <T extends any[], P extends T[number], K extends keyof P>(
+export const arrayToObject = <T extends any[], P extends T[number], K extends keyof P>(
   items: T,
   key: K | ((item: P) => any),
   childKey?: K,

@@ -1,6 +1,7 @@
 import { Subscribable, type Subscriber } from './subscribable';
 
 type SubscriberResult = void | boolean;
+type SubscriberAsyncResult = void | boolean | Promise<void | boolean>;
 
 export interface CustomEvent<EventData = any, EventContext = any> {
   type: string;
@@ -10,8 +11,33 @@ export interface CustomEvent<EventData = any, EventContext = any> {
 
 export type CustomEventClass = new (...args: any[]) => any;
 
-export class Event extends Subscribable {
-  dispatch<T extends CustomEvent = any>(event: T, context?: any) {
+class EventAsync extends Subscribable<Subscriber<any, SubscriberAsyncResult>> {
+  dispatch<T extends CustomEvent>(event: T, context?: any) {
+    (event as any).context = context;
+
+    const promises = this.map((subscriber) => {
+      return subscriber(event);
+    });
+
+    return Promise.all(promises).then((results) =>
+      results.every((result) => result !== false),
+    );
+  }
+
+  subscribeTo<T extends CustomEventClass>(
+    type: T,
+    subscriber: Subscriber<InstanceType<T>, SubscriberAsyncResult>,
+  ) {
+    return this.subscribe((event) => {
+      if (type && event instanceof type) {
+        return subscriber(event);
+      }
+    });
+  }
+}
+
+export class Event extends Subscribable<Subscriber<any, SubscriberResult>> {
+  dispatch<T extends CustomEvent>(event: T, context?: any) {
     let interrupted = false;
     (event as any).context = context;
     this.each((subscriber) => {
@@ -21,6 +47,7 @@ export class Event extends Subscribable {
     });
     return interrupted ? false : true;
   }
+
   subscribeTo<T extends CustomEventClass>(
     type: T,
     subscriber: Subscriber<InstanceType<T>, SubscriberResult>,
@@ -31,7 +58,8 @@ export class Event extends Subscribable {
       }
     });
   }
-  subscribeWith<T extends CustomEvent = CustomEvent>(
+
+  subscribeWith<T extends CustomEvent>(
     type: string | string[],
     subscriber: Subscriber<T, SubscriberResult>,
   ) {
@@ -45,28 +73,22 @@ export class Event extends Subscribable {
       }
     });
   }
+
+  static async() {
+    return new EventAsync();
+  }
 }
 
-// const event = new Event();
-
-// class AEvent implements CustomEvent {
-//   type = 'a';
+// class PreposeEvent implements CustomEvent {
+//   type = 'prepose';
 // }
 
-// event.subscribe((event) => {
-//   return true;
-// });
+// const event = new EventAsync();
 
-// event.subscribeTo(AEvent, (event) => {
-//   console.log('1');
-//   return true;
-// });
-
-// event.subscribeTo(AEvent, (event) => {
-//   console.log('2');
-//   return true;
-// });
-
-// const result = event.dispatch(new AEvent());
-
-// console.log(result);
+// (async () => {
+//   event.subscribe(() => {
+//     return false;
+//   });
+//   const a = await event.dispatch(new PreposeEvent());
+//   console.log(a);
+// })();

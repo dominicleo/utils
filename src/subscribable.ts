@@ -13,36 +13,49 @@ export interface Unsubscribe {
 
 export class Subscribable<SubscriberType extends Subscriber = Subscriber> {
   private index = 0;
-  private subscribers = new Map<string | number, SubscriberType>();
+  protected subscribers = new Map<string | number, SubscriberType>();
 
-  reduce<T = never>(
-    callback: (memo: T, subscriber: SubscriberType) => T,
+  protected each(
+    callback: (
+      subscriber: SubscriberType,
+      index: number,
+      subscribers: SubscriberType[],
+    ) => void,
+  ) {
+    const subscribers = Array.from(this.subscribers.values());
+    subscribers.forEach((subscriber, index, subscribers) =>
+      callback(subscriber, index, subscribers),
+    );
+  }
+
+  protected map(
+    callback: (
+      subscriber: SubscriberType,
+      index: number,
+      subscribers: SubscriberType[],
+    ) => any,
+  ) {
+    const subscribers = Array.from(this.subscribers.values());
+    return subscribers.map((subscriber, index, subscribers) =>
+      callback(subscriber, index, subscribers),
+    );
+  }
+
+  protected reduce<T = never>(
+    callback: (
+      memo: T,
+      subscriber: SubscriberType,
+      index: number,
+      subscribers: SubscriberType[],
+    ) => T,
     initialValue: T,
   ) {
     let memo = initialValue;
-    this.each((subscriber) => {
-      memo = callback(memo, subscriber);
+    this.each((subscriber, index, subscribers) => {
+      memo = callback(memo, subscriber, index, subscribers);
     });
     return memo;
   }
-
-  each(callback: (subscriber: SubscriberType) => void) {
-    this.subscribers.forEach((subscriber) => callback(subscriber));
-  }
-
-  // dispatch<T extends ExtendsType = any>(event: T, context?: any) {
-  //   const subscribers: SubscriberType[] = [];
-  //   for (const key in this.subscribers) {
-  //     if (isFunction(this.subscribers[key])) {
-  //       (event as any).context = context;
-  //       subscribers.push(this.subscribers[key]);
-  //     }
-  //   }
-
-  //   return Promise.all(subscribers.map((subscriber) => subscriber(event))).then(
-  //     (results) => results.every((result) => result !== false),
-  //   );
-  // }
 
   subscribe(subscriber: SubscriberType) {
     let id: number;
